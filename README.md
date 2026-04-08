@@ -1,59 +1,291 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel 13 Admin Search App
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A simple Laravel project with:
 
-## About Laravel
+- Admin login
+- User management list
+- Product management list
+- Combined search (User + Product)
+- Seeded large sample data for testing performance
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This guide is written for beginners and explains everything step by step.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 1) Requirements
 
-## Learning Laravel
+Make sure these are installed:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+- PHP 8.2+
+- Composer
+- Node.js 18+ and npm
+- MySQL (or SQLite)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## 2) Project Setup (Step by Step)
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Step 1: Clone and open project
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <your-repo-url>
+cd laravel-13
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Step 2: Install backend dependencies
 
-## Contributing
+```bash
+composer install
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Step 3: Install frontend dependencies
 
-## Code of Conduct
+```bash
+npm install
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Step 4: Create environment file
 
-## Security Vulnerabilities
+```bash
+cp .env.example .env
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Step 5: Generate app key
+
+```bash
+php artisan key:generate
+```
+
+### Step 6: Configure database
+
+Open `.env` and set DB values, for example:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel_13
+DB_USERNAME=root
+DB_PASSWORD=password
+```
+
+### Step 7: Run migrations and seed data
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+What this does:
+- Creates all tables (`users`, `products`, auth/session tables, telescope tables)
+- Creates an admin account
+- Creates many users/products for testing search
+
+### Step 8: Build assets
+
+For development:
+
+```bash
+npm run dev
+```
+
+For production build:
+
+```bash
+npm run build
+```
+
+### Step 9: Start Laravel server
+
+```bash
+php artisan serve
+```
+
+Open: `http://127.0.0.1:8000`
+
+---
+
+## 3) Default Login
+
+After seeding:
+
+- Email: `admin@example.com`
+- Password: `Admin@123456`
+
+Only admin can access admin pages.
+
+---
+
+## 4) Main Routes
+
+Public/Auth:
+- `/login`
+- `/register`
+- `/forgot-password`
+
+User:
+- `/dashboard`
+- `/profile`
+
+Admin (requires `auth` + `admin` middleware):
+- `/admin/dashboard`
+- `/admin/users`
+- `/admin/products`
+- `/admin/search`
+
+---
+
+## 4.1) Screenshots (Reference)
+
+Add your screenshots inside: `docs/screenshots/`
+
+Recommended file names:
+
+- `login-page.png`
+- `admin-dashboard.png`
+- `users-list.png`
+- `products-list.png`
+- `combined-search.png`
+
+Then they will appear below:
+
+### Login Page
+![Login Page](docs/screenshots/login-page.png)
+
+### Admin Dashboard
+![Admin Dashboard](docs/screenshots/admin-dashboard.png)
+
+### Users List
+![Users List](docs/screenshots/users-list.png)
+
+### Products List
+![Products List](docs/screenshots/products-list.png)
+
+### Combined Search
+![Combined Search](docs/screenshots/combined-search.png)
+
+---
+
+## 5) How Search Works (Simple Explanation)
+
+Search flow:
+
+1. User enters text in admin search page.
+2. `CombinedSearchController` calls `SearchService`.
+3. `SearchService` calls `RunCombinedSearchAction`.
+4. Action queries:
+   - users from `UserRepository`
+   - products from `ProductRepository`
+5. Results are merged and duplicate rows are removed.
+6. Final list is shown as:
+   - `user_name`
+   - `product_name`
+
+Scout is configured with `database` driver in `config/scout.php`, so search works without external engines.
+
+---
+
+## 6) Project Structure (Important Files)
+
+- `app/Http/Controllers/Admin/*` - admin pages
+- `app/Http/Controllers/Auth/*` - authentication flows
+- `app/Actions/Search/RunCombinedSearchAction.php` - combined search logic
+- `app/Repositories/*` - data access layer
+- `app/Services/*` - business service layer
+- `app/Http/Middleware/EnsureAdmin.php` - admin-only guard
+- `resources/views/admin/*` - admin Blade templates
+- `routes/web.php` - main web routes
+- `routes/auth.php` - auth routes
+- `database/seeders/DatabaseSeeder.php` - demo data
+
+---
+
+## 7) Run Tests
+
+```bash
+php artisan test
+```
+
+If you get asset-related errors, run:
+
+```bash
+npm run build
+```
+
+---
+
+## 8) Optional Useful Commands
+
+Re-index Scout records:
+
+```bash
+php artisan scout:import "App\Models\User"
+php artisan scout:import "App\Models\Product"
+```
+
+Or use one command:
+
+```bash
+composer search:sync
+```
+
+Clear caches:
+
+```bash
+php artisan optimize:clear
+```
+
+Code standard check (no file changes):
+
+```bash
+composer cs
+```
+
+Auto-fix code style:
+
+```bash
+composer format
+```
+
+---
+
+## 9) Troubleshooting
+
+- **Cannot login as admin**
+  - Confirm seed completed successfully.
+  - Verify admin email/password in `DatabaseSeeder`.
+
+- **Database errors**
+  - Recheck `.env` DB credentials.
+  - Run `php artisan migrate:fresh --seed`.
+
+- **Search seems empty**
+  - Ensure users/products data exists.
+  - Verify `SCOUT_DRIVER=database` in `.env`.
+  - Run `composer search:sync` after large data changes.
+
+- **Code style issues before commit**
+  - Run `composer cs` to check style.
+  - Run `composer format` to auto-fix style.
+
+---
+
+## 10) Implementation Summary (Step by Step)
+
+High-level implementation order used in this project:
+
+1. Added auth scaffolding controllers and views.
+2. Added `role` field in users table and admin middleware.
+3. Created Product model, migration, factory, and relations.
+4. Added repositories for users/products (pagination + search).
+5. Added services and actions for combined search.
+6. Added admin controllers and Blade pages.
+7. Added routes for auth, profile, dashboard, and admin area.
+8. Added seeders for admin + bulk users/products.
+9. Added Scout + Telescope configuration.
+10. Added feature tests for auth/profile flows.
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
-# laravel-13
+This project uses the MIT license.
