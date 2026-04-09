@@ -9,7 +9,7 @@ use Illuminate\Support\Collection as BaseCollection;
 
 class ProductRepository
 {
-    public function paginate(int $perPage = 20, ?string $query = null): LengthAwarePaginator
+    public function paginate(int $perPage = 20, ?string $query = null, ?int $page = null): LengthAwarePaginator
     {
         if ($query) {
             return Product::search($query)
@@ -17,14 +17,14 @@ class ProductRepository
                     ->select(['id', 'name', 'description', 'user_id', 'created_at'])
                     ->with(['user:id,name'])
                 )
-                ->paginate($perPage);
+                ->paginate($perPage, 'page', $page);
         }
 
         return Product::query()
             ->select(['id', 'name', 'description', 'user_id', 'created_at'])
             ->with(['user:id,name'])
             ->latest('id')
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function scoutSearch(string $query, int $limit = 50): Collection

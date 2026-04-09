@@ -20,18 +20,25 @@ class RunCombinedSearchAction
         $products = $this->productRepository->scoutSearch($query, 50);
         $productsByUsers = $this->productRepository->forUserIds($users->keys()->all())->groupBy('user_id');
 
-        return $products->map(function ($product) use ($users) {
+        $rowsFromProducts = $products->toBase()->map(function ($product) use ($users) {
             return [
                 'user_name' => $users[$product->user_id]->name ?? 'Unknown User',
                 'product_name' => $product->name,
             ];
-        })->merge(
-            $productsByUsers->map(function ($userProducts, $userId) use ($users) {
+        });
+
+        $rowsFromUserProducts = $productsByUsers
+            ->map(function ($userProducts, $userId) use ($users) {
                 return $userProducts->map(fn ($product) => [
                     'user_name' => $users[$userId]->name ?? 'Unknown User',
                     'product_name' => $product->name,
                 ]);
-            })->flatten(1)
-        )->unique(fn ($row) => $row['user_name'].'|'.$row['product_name'])->values();
+            })
+            ->flatten(1);
+
+        return $rowsFromProducts
+            ->merge($rowsFromUserProducts)
+            ->unique(fn ($row) => $row['user_name'].'|'.$row['product_name'])
+            ->values();
     }
 }

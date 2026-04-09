@@ -11,8 +11,8 @@ class SearchUsersAction
     {
     }
 
-    public function execute(?string $query, int $perPage = 20): LengthAwarePaginator
+    public function execute(?string $query, int $perPage = 20, ?int $page = null): LengthAwarePaginator
     {
-        return $this->userRepository->paginate($perPage, $query);
+        return $this->userRepository->paginate($perPage, $query, $page);
     }
 }

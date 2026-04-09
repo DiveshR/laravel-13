@@ -11,8 +11,8 @@ class UserService
     {
     }
 
-    public function listUsers(?string $query, int $perPage = 20): LengthAwarePaginator
+    public function listUsers(?string $query, int $perPage = 20, ?int $page = null): LengthAwarePaginator
     {
-        return $this->searchUsersAction->execute($query, $perPage);
+        return $this->searchUsersAction->execute($query, $perPage, $page);
     }
 }

@@ -11,8 +11,8 @@ class ProductService
     {
     }
 
-    public function listProducts(?string $query, int $perPage = 20): LengthAwarePaginator
+    public function listProducts(?string $query, int $perPage = 20, ?int $page = null): LengthAwarePaginator
     {
-        return $this->searchProductsAction->execute($query, $perPage);
+        return $this->searchProductsAction->execute($query, $perPage, $page);
     }
 }

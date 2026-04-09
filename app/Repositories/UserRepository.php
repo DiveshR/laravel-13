@@ -8,18 +8,18 @@ use Illuminate\Support\Collection;
 
 class UserRepository
 {
-    public function paginate(int $perPage = 20, ?string $query = null): LengthAwarePaginator
+    public function paginate(int $perPage = 20, ?string $query = null, ?int $page = null): LengthAwarePaginator
     {
         if ($query) {
             return User::search($query)
                 ->query(fn ($builder) => $builder->select(['id', 'name', 'email', 'role', 'created_at']))
-                ->paginate($perPage);
+                ->paginate($perPage, 'page', $page);
         }
 
         return User::query()
             ->select(['id', 'name', 'email', 'role', 'created_at'])
             ->latest('id')
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function scoutSearch(string $query, int $limit = 20): Collection

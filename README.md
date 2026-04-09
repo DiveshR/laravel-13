@@ -184,6 +184,129 @@ Scout is configured with `database` driver in `config/scout.php`, so search work
 
 ---
 
+## 5.1) Redis Caching For Admin Lists + Combined Search
+
+The admin users/products lists load rows via AJAX (infinite scroll + search). Those AJAX HTML responses are cached in Redis for 60 seconds (configurable) using Laravel Cache.
+
+Key points:
+- Cache logic lives in the service layer:
+  - `app/Services/Admin/AdminListingService.php` (users/products list rows)
+  - `app/Services/SearchService.php` (combined search)
+  - `app/Services/SearchCacheService.php` (keys + TTL + locks + tags)
+- Unique keys are generated per query + page and include a version number for invalidation:
+  - `admin:users:rows:v{usersVersion}:...`
+  - `admin:products:rows:v{productsVersion}:...`
+  - `search:combined:u{usersVersion}:p{productsVersion}:...`
+- Cache stampede protection:
+  - Uses cache locks (`Cache::lock()->block()`)
+  - Uses TTL jitter to avoid synchronized expiry
+- Avoid over-caching:
+  - Queries shorter than `SEARCH_CACHE_MIN_QUERY_LENGTH` are not cached (default: 2)
+
+### Enable Redis cache store
+
+In `.env`:
+
+```env
+CACHE_STORE=redis
+# Laravel 10 and earlier used CACHE_DRIVER; Laravel 13 uses CACHE_STORE.
+# CACHE_DRIVER=redis
+REDIS_CLIENT=phpredis
+REDIS_HOST=127.0.0.1
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+```
+
+Search cache settings:
+
+```env
+SEARCH_CACHE_ENABLED=true
+SEARCH_CACHE_TTL_SECONDS=60
+SEARCH_CACHE_TTL_JITTER_SECONDS=10
+SEARCH_CACHE_LOCK_SECONDS=10
+SEARCH_CACHE_LOCK_WAIT_SECONDS=2
+SEARCH_CACHE_MIN_QUERY_LENGTH=2
+```
+
+Then run:
+
+```bash
+php artisan config:clear
+```
+
+### Bypass cache (for debugging / benchmarking)
+
+Admin list AJAX requests support `bypass_cache=1`:
+
+- `/admin/users?q=John&bypass_cache=1` (AJAX only)
+- `/admin/products?q=Phone&bypass_cache=1` (AJAX only)
+
+### How to test speed (cache vs no-cache)
+
+Important:
+- Caching is applied to the **AJAX rows** requests used by infinite-scroll and live search (requests sent with `X-Requested-With: XMLHttpRequest`).
+- You must be logged in as an admin, otherwise these routes will redirect to `/login` and timings won’t be meaningful.
+
+#### Option A: Browser (recommended)
+
+1. Login as admin in your browser.
+2. Open DevTools → Network tab.
+3. Go to `/admin/users`, type a search term, and scroll down to trigger AJAX loads.
+4. Compare timings for:
+   - `.../admin/users?...&bypass_cache=1` (no-cache baseline)
+   - `.../admin/users?...` (cache warm, after the first request)
+
+Repeat the same for `/admin/products`.
+
+#### Option B: CLI with `curl`
+
+1. Clear cache to force a cold start:
+
+```bash
+php artisan cache:clear
+```
+
+2. Run a baseline (no-cache) request (AJAX header required):
+
+```bash
+curl -s -o /dev/null \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -b 'YOUR_COOKIE_HERE' \
+  -w 'users no-cache: %{time_total}s\n' \
+  'http://127.0.0.1:8000/admin/users?q=John&page=1&bypass_cache=1'
+```
+
+3. Run cache requests (first one fills cache, next ones are warm):
+
+```bash
+curl -s -o /dev/null \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -b 'YOUR_COOKIE_HERE' \
+  -w 'users cached: %{time_total}s\n' \
+  'http://127.0.0.1:8000/admin/users?q=John&page=1'
+```
+
+Use the same approach for products by switching the URL to:
+- `http://127.0.0.1:8000/admin/products?...`
+
+Tip: `YOUR_COOKIE_HERE` should include your logged-in session cookie (copy the `Cookie` header from DevTools → Network for a request to `/admin/users`).
+
+---
+
+## 5.2) Cache Invalidation Strategy (Users / Products)
+
+When a `User` or `Product` is created/updated/deleted:
+
+- observers bump a version counter in cache (`search:ver:users` / `search:ver:products`)
+- cache keys include the version, so older entries become unreachable immediately
+- if cache tags are supported (Redis), tags are flushed too (`search:*`)
+
+Observers:
+- `app/Observers/UserObserver.php`
+- `app/Observers/ProductObserver.php`
+
+---
+
 ## 6) Project Structure (Important Files)
 
 - `app/Http/Controllers/Admin/*` - admin pages
@@ -191,6 +314,8 @@ Scout is configured with `database` driver in `config/scout.php`, so search work
 - `app/Actions/Search/RunCombinedSearchAction.php` - combined search logic
 - `app/Repositories/*` - data access layer
 - `app/Services/*` - business service layer
+- `app/Services/Admin/AdminListingService.php` - cached HTML rows for admin lists
+- `app/Services/SearchCacheService.php` - cache keys / TTL / locks / tags
 - `app/Http/Middleware/EnsureAdmin.php` - admin-only guard
 - `resources/views/admin/*` - admin Blade templates
 - `routes/web.php` - main web routes
@@ -283,6 +408,9 @@ High-level implementation order used in this project:
 8. Added seeders for admin + bulk users/products.
 9. Added Scout + Telescope configuration.
 10. Added feature tests for auth/profile flows.
+
+11. Added Redis-backed caching for admin lists + combined search.
+12. Added cache invalidation via model observers.
 
 ---
 
