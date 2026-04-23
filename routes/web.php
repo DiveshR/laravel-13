@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CombinedSearchController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\ProfileController;
@@ -24,6 +25,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/search', [CombinedSearchController::class, 'index'])->name('search.index');
+
+    Route::post('/users/export', [ExportController::class, 'exportUsers'])->name('users.export');
+    Route::post('/products/export', [ExportController::class, 'exportProducts'])->name('products.export');
+    Route::get('/exports/{export}/download', [ExportController::class, 'download'])->name('exports.download');
 });
 
 require __DIR__.'/auth.php';

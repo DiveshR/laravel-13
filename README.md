@@ -94,10 +94,18 @@ For production build:
 npm run build
 ```
 
-### Step 9: Start Laravel server
+### Step 9: Start Laravel server and Queue Worker
+
+Open a terminal and start the server:
 
 ```bash
 php artisan serve
+```
+
+Open a second terminal and start the queue worker (needed for CSV exports):
+
+```bash
+php artisan queue:work
 ```
 
 Open: `http://127.0.0.1:8000`
@@ -307,6 +315,40 @@ Observers:
 
 ---
 
+## 5.3) CSV Exports (Background Jobs & Mail)
+
+The admin panel allows exporting Users and Products to CSV. To prevent timeouts on large datasets, these exports are processed in the background.
+
+1. **Triggering**: An admin clicks "Export CSV". A pending `Export` record is created.
+2. **Processing**: A background job (`ExportUsersJob` or `ExportProductsJob`) generates the CSV in chunks.
+3. **Notification**: Once complete, an email with a download link is sent to the admin.
+
+### Running the Queue
+
+For exports to process, you must have the queue worker running:
+
+```bash
+php artisan queue:work
+```
+
+### Mail Configuration (Mailtrap)
+
+Emails are sent using the configuration in `.env`. By default, this project uses Mailtrap for testing.
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your_username
+MAIL_PASSWORD=your_password
+MAIL_ENCRYPTION=null
+MAIL_FROM_ADDRESS=test@example.com
+```
+
+If you don't receive the email, check your Mailtrap inbox, or ensure your `.env` contains valid SMTP credentials. Note: You must restart the queue worker if you change `.env` settings (`php artisan queue:restart`).
+
+---
+
 ## 6) Project Structure (Important Files)
 
 - `app/Http/Controllers/Admin/*` - admin pages
@@ -411,6 +453,7 @@ High-level implementation order used in this project:
 
 11. Added Redis-backed caching for admin lists + combined search.
 12. Added cache invalidation via model observers.
+13. Added background CSV exports for users and products with email notifications.
 
 ---
 
