@@ -454,6 +454,63 @@ High-level implementation order used in this project:
 11. Added Redis-backed caching for admin lists + combined search.
 12. Added cache invalidation via model observers.
 13. Added background CSV exports for users and products with email notifications.
+14. Dockerized the application (PHP, Nginx, MySQL, Redis, Queue).
+
+---
+
+## 11) Docker Setup
+
+The project includes a full Docker setup for local development.
+
+### Requirements
+- Docker Desktop or Docker Engine + Docker Compose
+
+### Step 1: Update Environment Variables
+In your `.env` file, ensure the following variables are set for Docker:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=laravel_13
+DB_USERNAME=root
+DB_PASSWORD=password
+
+CACHE_STORE=redis
+REDIS_HOST=redis
+SESSION_DRIVER=redis
+QUEUE_CONNECTION=redis
+```
+
+### Step 2: Build and Start Containers
+Run the following command in the terminal to build the images and start the services in the background:
+
+```bash
+docker compose up -d --build
+```
+
+### Step 3: Run Setup Commands in the Container
+Run Composer install, migrations, and seed the database inside the `app` container:
+
+```bash
+docker compose exec app composer install
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate:fresh --seed
+docker compose exec app npm install
+docker compose exec app npm run build
+```
+
+### Services Included
+- **app**: PHP 8.3 FPM running the main application (with Node.js installed).
+- **web**: Nginx web server available on port `8000` (http://localhost:8000).
+- **db**: MySQL 8.0 available on port `3306`.
+- **redis**: Redis available on port `6379`.
+- **queue**: A background container running `php artisan queue:work --tries=3`.
+
+To run artisan commands inside the container:
+```bash
+docker compose exec app php artisan tinker
+```
 
 ---
 

@@ -1,0 +1,87 @@
+services:
+  app:
+    build:
+      args:
+        user: diveshmac
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: laravel-13-app
+    container_name: laravel-13-app
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - laravel-13-network
+
+  web:
+    image: nginx:alpine
+    container_name: laravel-13-web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - laravel-13-network
+
+  db:
+    image: mysql:8.0
+    container_name: laravel-13-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-laravel_13}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_USER: ${DB_USERNAME:-root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - laravel-13-mysql:/var/lib/mysql
+    networks:
+      - laravel-13-network
+
+  redis:
+    image: redis:alpine
+    container_name: laravel-13-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - laravel-13-redis:/data
+    networks:
+      - laravel-13-network
+
+  queue:
+    build:
+      args:
+        user: diveshmac
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: laravel-13-app
+    container_name: laravel-13-queue
+    restart: unless-stopped
+    working_dir: /var/www/
+    command: php artisan queue:work --tries=3
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    depends_on:
+      - db
+      - redis
+    networks:
+      - laravel-13-network
+
+networks:
+  laravel-13-network:
+    driver: bridge
+
+volumes:
+  laravel-13-mysql:
+    driver: local
+  laravel-13-redis:
+    driver: local
