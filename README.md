@@ -171,6 +171,10 @@ Then they will appear below:
 ### Combined Search
 ![Combined Search](docs/screenshots/combined-search.png)
 
+### TrueLayer Setup
+![TrueLayer Setup](docs/screenshots/truelayer-setup.png)
+![TrueLayer URLs](docs/screenshots/truelayer-setup-step2.png)
+
 ---
 
 ## 5) How Search Works (Simple Explanation)
@@ -349,6 +353,17 @@ If you don't receive the email, check your Mailtrap inbox, or ensure your `.env`
 
 ---
 
+## 5.4) TrueLayer Integration
+
+The user dashboard includes a built-in, two-step TrueLayer integration setup:
+
+1. **Verification**: Users input their TrueLayer **Client ID** and **Client Secret**. The application securely validates these keys against TrueLayer's authentication API (`auth.truelayer-sandbox.com/connect/token`).
+2. **Setup**: Once validated, the keys are securely encrypted and stored in the database. The system then displays a unique **Redirect URI** and **Webhook URI** which the user must copy and paste into their TrueLayer Developer Console.
+
+This flow ensures valid API connections and properly assigns webhooks for background payment notifications.
+
+---
+
 ## 6) Project Structure (Important Files)
 
 - `app/Http/Controllers/Admin/*` - admin pages
@@ -454,7 +469,8 @@ High-level implementation order used in this project:
 11. Added Redis-backed caching for admin lists + combined search.
 12. Added cache invalidation via model observers.
 13. Added background CSV exports for users and products with email notifications.
-14. Dockerized the application (PHP, Nginx, MySQL, Redis, Queue).
+14. Implemented 2-step TrueLayer credentials validation and storage in user dashboard.
+15. Dockerized the application (PHP, Nginx, MySQL, Redis, Queue).
 
 ---
 
