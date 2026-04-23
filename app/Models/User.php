@@ -37,6 +37,11 @@ class User extends Authenticatable
         return $this->hasMany(Product::class);
     }
 
+    public function trueLayerCredential(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(TrueLayerCredential::class);
+    }
+
     public function toSearchableArray(): array
     {
         return [

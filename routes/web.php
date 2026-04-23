@@ -18,6 +18,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // TrueLayer Credentials Routes
+    Route::post('/truelayer/verify', [\App\Http\Controllers\TrueLayerCredentialController::class, 'verify'])->name('truelayer.verify');
+    Route::post('/truelayer/confirm', [\App\Http\Controllers\TrueLayerCredentialController::class, 'confirm'])->name('truelayer.confirm');
+    Route::post('/truelayer/disconnect', [\App\Http\Controllers\TrueLayerCredentialController::class, 'disconnect'])->name('truelayer.disconnect');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
