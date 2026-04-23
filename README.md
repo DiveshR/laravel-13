@@ -171,10 +171,6 @@ Then they will appear below:
 ### Combined Search
 ![Combined Search](docs/screenshots/combined-search.png)
 
-### TrueLayer Setup
-![TrueLayer Setup](docs/screenshots/truelayer-setup.png)
-![TrueLayer URLs](docs/screenshots/truelayer-setup-step2.png)
-
 ---
 
 ## 5) How Search Works (Simple Explanation)
@@ -361,6 +357,9 @@ The user dashboard includes a built-in, two-step TrueLayer integration setup:
 2. **Setup**: Once validated, the keys are securely encrypted and stored in the database. The system then displays a unique **Redirect URI** and **Webhook URI** which the user must copy and paste into their TrueLayer Developer Console.
 
 This flow ensures valid API connections and properly assigns webhooks for background payment notifications.
+
+![TrueLayer Setup](docs/screenshots/truelayer-setup.png)
+![TrueLayer URLs](docs/screenshots/truelayer-setup-step2.png)
 
 ---
 
